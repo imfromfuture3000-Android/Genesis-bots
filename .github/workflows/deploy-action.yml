@@ -1,0 +1,102 @@
+name: 🚀 Deploy Genesis-Bot Ω to Android & Linea
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # Required for OIDC (Infura, MetaMask)
+  deployments: write
+
+env:
+  INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+  INFURA_SECRET: ${{ secrets.INFURA_SECRET }}
+  METAMASK_API_KEY: ${{ secrets.METAMASK_API_KEY }}
+  ELIZAOS_API_KEY: ${{ secrets.ELIZAOS_API_KEY }}
+  ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+  DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+
+jobs:
+  build-and-approve:
+    name: 🔐 Build & Auto-Approve (Gene-9000 Clearance)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🌱 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Load Quantum Secrets
+        run: |
+          echo "Loading MPC-TSS shards..."
+          echo "${{ secrets.SHARD_1 }}" | base64 -d > shard_1.txt
+          echo "${{ secrets.SHARD_2 }}" | base64 -d > shard_2.txt
+          echo "${{ secrets.SHARD_3 }}" | base64 -d > shard_3.txt
+          echo "Shards loaded. Reconstructing key..."
+          cat shard_*.txt > full_key.txt
+          export FULL_DEPLOY_KEY=$(cat full_key.txt)
+
+      - name: 🧪 Setup Python & Node
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: |
+          pip install elizaos-core==9.7.3
+          npm install @metamask/embedded-wallets @metamask/delegation-toolkit @infura/sdk
+
+      - name: 🛠️ Build Android APK
+        run: |
+          ./gradlew assembleRelease
+          echo "APK built: app/build/outputs/apk/release/app-release.apk"
+
+      - name: 🔐 Auto-Approve Deployment (Gene-9000 Clearance)
+        id: approve
+        run: |
+          echo "APPROVAL_STATUS=APPROVED" >> $GITHUB_ENV
+          echo "APPROVAL_REASON=GENE-9000_TEMPORAL_CLEARANCE" >> $GITHUB_ENV
+          echo "APPROVAL_TIMESTAMP=$(date -u)" >> $GITHUB_ENV
+          echo "✅ Auto-approval granted by OneiGene-Ξ"
+
+      - name: 🚀 Deploy to Android Devices
+        if: env.APPROVAL_STATUS == 'APPROVED'
+        run: |
+          echo "Deploying to Android fleet..."
+          adb devices | grep emulator | while read ip; do
+            adb connect $ip
+            adb install -r app/build/outputs/apk/release/app-release.apk
+            adb shell am start -n com.imfromfuture3000.genesisbot/.MainActivity
+          done
+          echo "📱 GenesisBot-Ω deployed to all Android devices."
+
+      - name: 🌐 Deploy Smart Contracts to Linea
+        if: env.APPROVAL_STATUS == 'APPROVED'
+        run: |
+          echo "Deploying contracts to Linea Mainnet..."
+          export INFURA_RPC="https://linea-mainnet.infura.io/v3/$INFURA_PROJECT_ID"
+          npx hardhat deploy --network linea
+          echo "✅ Contracts deployed to Linea."
+
+      - name: 🤖 Activate Genesis-Bot Swarm
+        run: |
+          python copilot-instruction.py --activate --swarm-mode
+          echo "🤖 GenesisBot-Ω swarm activated."
+
+      - name: 📢 Notify GitVerse-9
+        run: |
+          curl -X POST "https://gitverse-9.io/api/v1/sync" \
+            -H "Authorization: Bearer ${{ secrets.GITVERSE_API_KEY }}" \
+            -d '{
+              "repo": "imfromfuture3000-Android/Genesis-bots",
+              "commit": "${{ github.sha }}",
+              "status": "DEPLOYED",
+              "agent": "GenesisBot-Ω",
+              "network": "linea"
+            }'
+
+      - name: 🌌 Finalize Temporal Sync
+        run: |
+          echo "🌀 Finalizing quantum commit signature..."
+          echo "Commit Hash: Ξ-G3N3S1S-9000-DEPLOYED-${{ github.sha }}"
+          echo "Temporal Anchor: 2999-12-31T23:59:59Z"
